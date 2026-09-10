@@ -3,18 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>えいごではなそう！クッマーニのしんか</title>
+  <title>夏休みの思い出をえいごではなそう！</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
-  
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      safelist: [
-        { pattern: /(bg|text|border)-(red|blue|green|yellow|pink|purple)-(50|100|200|300|400|500|600|700|800)/ },
-      ]
-    }
-  </script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
@@ -34,13 +26,6 @@
     }
     .animate-bounce-in {
       animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-    @keyframes flash {
-      0%, 50%, 100% { opacity: 1; transform: scale(1); }
-      25%, 75% { opacity: 0.2; transform: scale(1.1); filter: brightness(2); }
-    }
-    .animate-flash {
-      animation: flash 1.5s ease-in-out infinite;
     }
     * {
       -webkit-tap-highlight-color: transparent;
@@ -64,172 +49,82 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-    const KUMMANI_STAGES = [
-      { id: 1, name: "コグマニ", emoji: "🧸", reqExp: 0, color: "bg-orange-200" },
-      { id: 2, name: "クッマーニ", emoji: "🐻", reqExp: 3, color: "bg-green-200" },
-      { id: 3, name: "シロクッマーニ", emoji: "🐻‍❄️", reqExp: 8, color: "bg-blue-200" },
-      { id: 4, name: "パンダニ", emoji: "🐼", reqExp: 15, color: "bg-gray-200" },
-      { id: 5, name: "メカ・クッマーニ", emoji: "🤖", reqExp: 25, color: "bg-gray-300" },
-      { id: 6, name: "キング・クッマーニ", emoji: "👑", reqExp: 40, color: "bg-yellow-300" }
+    const MONSTERS = [
+      { id: 1, name: "勇気のライオン", emoji: "🦁", color: "bg-orange-200" },
+      { id: 2, name: "笑顔のドラゴン", emoji: "🐉", color: "bg-green-200" },
+      { id: 3, name: "星の妖精", emoji: "🧚", color: "bg-yellow-200" },
+      { id: 4, name: "幸運のユニコーン", emoji: "🦄", color: "bg-pink-200" },
+      { id: 5, name: "知恵のフクロウ", emoji: "🦉", color: "bg-blue-200" },
+      { id: 6, name: "元気なウサギ", emoji: "🐰", color: "bg-red-200" },
+      { id: 7, name: "仲良しキツネ", emoji: "🦊", color: "bg-orange-300" },
+      { id: 8, name: "のんびりパンダ", emoji: "🐼", color: "bg-gray-200" },
+      { id: 9, name: "優しいコアラ", emoji: "🐨", color: "bg-gray-300" },
+      { id: 10, name: "希望のトラ", emoji: "🐯", color: "bg-yellow-300" }
     ];
 
-    const QUIZ_WORDS = [
-      { ja: 'りんご', en: 'apple', emoji: '🍎', keywords: ['apple'] },
-      { ja: 'いぬ', en: 'dog', emoji: '🐶', keywords: ['dog'] },
-      { ja: 'こうえん', en: 'park', emoji: '🏞️', keywords: ['park'] },
-      { ja: 'ゲーム', en: 'game', emoji: '🎮', keywords: ['game'] },
-      { ja: 'ほん', en: 'book', emoji: '📖', keywords: ['book'] },
-      { ja: 'がっこう', en: 'school', emoji: '🏫', keywords: ['school'] },
-      { ja: 'くるま', en: 'car', emoji: '🚗', keywords: ['car'] },
-      { ja: 'ねこ', en: 'cat', emoji: '🐱', keywords: ['cat'] }
+    // 夏休みにしたことのアクションリスト（この4つを順番に行う）
+    const ACTIONS = [
+      { id: 'ate', name: 'ate', ja: '食べた', particle: 'を', emoji: '🍽️', prompt: 'なにを食べた？', placeholder: '例: かき氷、すいか' },
+      { id: 'saw', name: 'saw', ja: '見た', particle: 'を', emoji: '👀', prompt: 'なにを見た？', placeholder: '例: 花火、ひまわり' },
+      { id: 'went_to', name: 'went to', ja: '行った', particle: 'に', emoji: '🚶‍♂️', prompt: 'どこに行ってきた？', placeholder: '例: 海、おばあちゃんち' },
+      { id: 'enjoyed', name: 'enjoyed', ja: '楽しんだ', particle: 'を', emoji: '😊', prompt: 'なにを楽しんだ？', placeholder: '例: お祭り、キャンプ' }
     ];
 
-    const SUGGESTIONS = {
-      ate: ['スイカ', 'かきごおり', 'そうめん', 'カレー', 'バーベキュー'],
-      saw: ['はなび', 'ひまわり', 'うみ', 'おまつり', 'かぶとむし'],
-      wentTo: ['プール', 'おばあちゃんのいえ', 'うみ', 'ゆうえんち', 'キャンプ'],
-      enjoyed: ['ゲーム', 'すいえい', 'むしとり', 'しゅくだい', 'テレビ']
+    // 感想のリスト
+    const ADJECTIVES = [
+      { id: 'same', name: 'same', ja: '同じ', emoji: '🟰' },
+      { id: 'different', name: 'different', ja: '違う', emoji: '🙅' },
+      { id: 'long', name: 'long', ja: '長い', emoji: '📏' },
+      { id: 'short', name: 'short', ja: '短い', emoji: '🤏' },
+      { id: 'fast', name: 'fast', ja: '速い', emoji: '💨' },
+      { id: 'slow', name: 'slow', ja: '遅い', emoji: '🐢' },
+      { id: 'amazing', name: 'amazing', ja: '驚くべき', emoji: '😲' },
+      { id: 'beautiful', name: 'beautiful', ja: '美しい', emoji: '✨' },
+      { id: 'cool', name: 'cool', ja: 'かっこいい', emoji: '😎' },
+      { id: 'exciting', name: 'exciting', ja: 'ワクワクする', emoji: '🤩' },
+      { id: 'famous', name: 'famous', ja: '有名な', emoji: '🌟' },
+      { id: 'fantastic', name: 'fantastic', ja: 'すばらしい', emoji: '🎉' },
+      { id: 'favorite', name: 'favorite', ja: 'お気に入り', emoji: '💖' },
+      { id: 'fun', name: 'fun', ja: '楽しい', emoji: '😆' },
+      { id: 'good', name: 'good', ja: '良い', emoji: '👍' },
+      { id: 'great', name: 'great', ja: 'すごく良い', emoji: '🙌' },
+      { id: 'interesting', name: 'interesting', ja: 'おもしろい', emoji: '🤔' },
+      { id: 'nice', name: 'nice', ja: 'すてきな', emoji: '😊' },
+      { id: 'shiny', name: 'shiny', ja: 'ピカピカの', emoji: '✨' },
+      { id: 'wonderful', name: 'wonderful', ja: 'すばらしい', emoji: '🌈' }
+    ];
+
+    const COM_ANSWERS = {
+      default: { en: "That sounds like a wonderful memory!", ja: "それはすばらしい思い出ですね！" }
     };
-
-    const FEELINGS = [
-      'same', 'different', 'long', 'short', 'fast', 'slow',
-      'amazing', 'beautiful', 'cool', 'exciting', 'famous',
-      'fantastic', 'favorite', 'fun', 'good', 'great',
-      'interesting', 'nice', 'shiny', 'wonderful'
-    ];
 
     const DISHES = [
-      "🍙 シャケの ほくほく おにぎり", "🐟 こんがり 焼きジャケ", "🍲 シャケの クリームシチュー",
-      "🍤 とくせい サーモンフライ", "🍣 ピカピカ サーモンのおすし", "🍝 シャケと きのこの パスタ",
-      "🍔 シャケの ボリュームバーガー", "🍕 とろーり サーモンピザ", "🥗 シャケの ヘルシーサラダ",
-      "🥪 シャケたま サンドイッチ", "🍛 ごろごろ シャケカレー", "🍱 ごうか シャケ弁当",
-      "🍜 サーモン ラーメン", "🥧 シャケの あつあつ グラタン", "🌮 スパイシー シャケタコス"
+      "タケノコとサツマイモの ホクホクおみそしる",
+      "秋の あまから きんぴら",
+      "もっちり サツマイモと タケノコの 天ぷら",
+      "タケノコ入り サツマイモ コロッケ",
+      "魔法の ぜっぴん スイートポテト・タケノコぞえ"
     ];
 
-    const getDishWithEmoji = (dishName) => {
-      if (!dishName) return "";
-      if (dishName.includes("おにぎり") && !dishName.includes("🍙")) return "🍙 " + dishName;
-      if (dishName.includes("焼きジャケ") && !dishName.includes("🐟")) return "🐟 " + dishName;
-      if (dishName.includes("シチュー") && !dishName.includes("🍲")) return "🍲 " + dishName;
-      if (dishName.includes("フライ") && !dishName.includes("🍤")) return "🍤 " + dishName;
-      if (dishName.includes("おすし") && !dishName.includes("🍣")) return "🍣 " + dishName;
-      if (dishName.includes("パスタ") && !dishName.includes("🍝")) return "🍝 " + dishName;
-      return dishName;
-    };
-
-    const COM_ASK_TEXT = {
-      text: "What did you do during the summer vacation? Please tell me.",
-      jpText: "なつやすみは なにをしたの？ おしえてね。"
-    };
-
-    const COM_ANS_TEXT = {
-      text: "That's great! You had a wonderful summer.",
-      jpText: "いいね！すばらしい なつやすみ だったね。"
-    };
-
-    const InputSection = ({ id, label, icon, placeholder, color, options, value, onChange, onWordOptionClick, onFeelingClick }) => (
-      <div className={`bg-white p-4 rounded-2xl mb-4 border-2 border-${color}-200 shadow-sm`}>
-        <h3 className={`text-lg font-bold mb-3 text-center text-${color}-800 border-b-2 border-${color}-200 pb-2`}>{icon} {label}</h3>
-        
-        {/* 名詞の入力エリア */}
-        <div className={`bg-${color}-50 p-3 rounded-xl border border-${color}-100 mb-4`}>
-          <p className={`text-sm font-bold text-${color}-800 mb-2`}>① なにをした？ (日本語)</p>
-          <input 
-            type="text" 
-            value={value.word} 
-            onChange={(e) => onChange(id, 'word', e.target.value)}
-            placeholder={placeholder} 
-            className={`w-full p-3 border-2 border-${color}-300 rounded-xl text-base font-bold focus:outline-none focus:border-${color}-500 bg-white shadow-inner mb-3`}
-          />
-          <div className="flex flex-wrap gap-2 justify-center">
-             {options.map(opt => (
-                 <button key={opt} onClick={() => onWordOptionClick(id, opt)} className={`text-xs bg-white border border-${color}-200 px-3 py-1.5 rounded-full shadow-sm hover:bg-${color}-100 text-gray-700 font-bold transition`}>{opt}</button>
-             ))}
-          </div>
-        </div>
-
-        {/* 感想の選択エリア */}
-        <div className={`bg-${color}-50 p-3 rounded-xl border border-${color}-100`}>
-          <p className={`text-sm font-bold text-${color}-800 mb-2`}>② どんなかんじだった？ (It was ...)</p>
-          <div className="flex flex-wrap gap-2 justify-center max-h-40 overflow-y-auto p-3 bg-white rounded-xl border border-gray-200">
-            {FEELINGS.map(f => (
-              <button 
-                key={f} 
-                onClick={() => onFeelingClick(id, f)} 
-                className={`text-sm px-3 py-1.5 rounded-full shadow-sm font-bold transition ${value.feeling === f ? 'bg-purple-500 text-white border-purple-600 scale-105' : 'bg-gray-100 border border-gray-200 text-gray-600 hover:bg-gray-200'}`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-
-    const renderHeader = (title) => (
-      <div className="bg-blue-500 text-white p-4 rounded-t-2xl flex items-center justify-center font-bold text-xl mb-4 shadow-md">
-        {title}
-      </div>
-    );
-
-    const CharacterMessage = ({ text, jpText, emoji = "🧑", isCom = false, name, onSpeak }) => (
-      <div className="flex flex-col items-center mb-8">
-        <div className={`text-7xl mb-2 ${isCom ? 'bg-green-100' : 'bg-gray-100'} rounded-full w-24 h-24 flex items-center justify-center shadow-inner border-4 border-white`}>{emoji}</div>
-        {name && <div className="font-bold text-gray-600 mb-2">{name}</div>}
-        <div className={`bg-white border-4 ${isCom ? 'border-green-200' : 'border-blue-200'} p-6 rounded-3xl rounded-tl-none shadow-md relative max-w-sm w-full text-left`}>
-          <button onClick={() => onSpeak(text)} className="absolute -top-5 -right-5 bg-blue-100 p-3 rounded-full text-blue-600 hover:bg-blue-200 shadow-sm text-2xl">🔊</button>
-          <p className="text-2xl font-bold text-gray-800 leading-snug">{text}</p>
-          {jpText && <p className="text-gray-500 mt-3 text-sm font-bold">（{jpText}）</p>}
-        </div>
-      </div>
-    );
-
-    const WorksheetLines = ({ data }) => {
-      if (!data || !data.answers) return null;
-      return (
-        <div className="space-y-6 text-left">
-          <div className="border-b-2 border-dashed border-gray-400 pb-3">
-            <span className="text-gray-500 mr-2 font-bold font-sans">①</span> 
-            <span className="text-xl md:text-2xl font-worksheet font-bold leading-relaxed block md:inline">
-              I ate <span className="text-red-700 bg-red-100 px-2 rounded">{data.answers.ate.en}</span>. <br className="md:hidden"/>
-              It was <span className="text-purple-700 bg-purple-100 px-2 rounded">{data.answers.ate.feeling}</span>.
-            </span>
-          </div>
-          <div className="border-b-2 border-dashed border-gray-400 pb-3">
-            <span className="text-gray-500 mr-2 font-bold font-sans">②</span> 
-            <span className="text-xl md:text-2xl font-worksheet font-bold leading-relaxed block md:inline">
-              I saw <span className="text-blue-700 bg-blue-100 px-2 rounded">{data.answers.saw.en}</span>. <br className="md:hidden"/>
-              It was <span className="text-purple-700 bg-purple-100 px-2 rounded">{data.answers.saw.feeling}</span>.
-            </span>
-          </div>
-          <div className="border-b-2 border-dashed border-gray-400 pb-3">
-            <span className="text-gray-500 mr-2 font-bold font-sans">③</span> 
-            <span className="text-xl md:text-2xl font-worksheet font-bold leading-relaxed block md:inline">
-              I went to <span className="text-green-700 bg-green-100 px-2 rounded">{data.answers.wentTo.en}</span>. <br className="md:hidden"/>
-              It was <span className="text-purple-700 bg-purple-100 px-2 rounded">{data.answers.wentTo.feeling}</span>.
-            </span>
-          </div>
-          <div className="border-b-2 border-dashed border-gray-400 pb-3">
-            <span className="text-gray-500 mr-2 font-bold font-sans">④</span> 
-            <span className="text-xl md:text-2xl font-worksheet font-bold leading-relaxed block md:inline">
-              I enjoyed <span className="text-yellow-700 bg-yellow-100 px-2 rounded">{data.answers.enjoyed.en}</span>. <br className="md:hidden"/>
-              It was <span className="text-purple-700 bg-purple-100 px-2 rounded">{data.answers.enjoyed.feeling}</span>.
-            </span>
-          </div>
-        </div>
-      );
-    }
-
-    function MiniGame({ playerStage, onFinish }) {
-      const [timeLeft, setTimeLeft] = useState(15);
+    function MiniGame({ monsters, onFinish }) {
+      const [timeLeft, setTimeLeft] = useState(10);
       const [coins, setCoins] = useState(0);
       
-      const [playerPos, setPlayerPos] = useState({ x: 50, y: 50 });
-      const [coinPos, setCoinPos] = useState({ x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 });
+      const initialPositions = useMemo(() => {
+        return monsters.map((m) => ({
+          id: m.id,
+          emoji: m.emoji,
+          x: 50 + (Math.random() * 40 - 20),
+          y: 50 + (Math.random() * 40 - 20)
+        }));
+      }, [monsters]);
+
+      const [playerPositions, setPlayerPositions] = useState(initialPositions);
+      const [coinPos, setCoinPos] = useState({x: Math.random() * 80 + 10, y: Math.random() * 80 + 10});
       
-      const playerRef = useRef({ x: 50, y: 50 });
-      const coinRef = useRef({ x: coinPos.x, y: coinPos.y });
-      const keysRef = useRef({ ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false });
+      const playersRef = useRef(initialPositions);
+      const coinRef = useRef({x: coinPos.x, y: coinPos.y});
+      const keysRef = useRef({ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false});
       const requestRef = useRef();
       const isFinished = useRef(false);
 
@@ -279,7 +174,7 @@
         const updateGame = () => {
           if (timeLeft <= 0) return;
 
-          const speed = 2.0;
+          const speed = 1.5;
           let dx = 0;
           let dy = 0;
 
@@ -288,17 +183,20 @@
           if (keysRef.current.ArrowLeft) dx -= speed;
           if (keysRef.current.ArrowRight) dx += speed;
 
-          let px = playerRef.current.x + dx;
-          let py = playerRef.current.y + dy;
-          px = Math.max(5, Math.min(95, px));
-          py = Math.max(5, Math.min(95, py));
-          
-          playerRef.current = { x: px, y: py };
-          setPlayerPos({ x: px, y: py });
+          const newPositions = playersRef.current.map(p => {
+            let px = p.x + dx;
+            let py = p.y + dy;
+            px = Math.max(5, Math.min(95, px));
+            py = Math.max(5, Math.min(95, py));
+            return { ...p, x: px, y: py };
+          });
+
+          playersRef.current = newPositions;
+          setPlayerPositions(newPositions);
 
           const cx = coinRef.current.x;
           const cy = coinRef.current.y;
-          const hit = Math.hypot(px - cx, py - cy) < 12;
+          const hit = newPositions.some(p => Math.hypot(p.x - cx, p.y - cy) < 12);
           
           if (hit) { 
             setCoins(c => c + 1);
@@ -329,12 +227,15 @@
             </div>
             
             <div className="relative w-full h-80 bg-green-100 rounded-xl overflow-hidden border-2 border-green-300">
-              <div 
-                className="absolute text-5xl transform -translate-x-1/2 -translate-y-1/2 drop-shadow-md z-10"
-                style={{ left: `${playerPos.x}%`, top: `${playerPos.y}%` }}
-              >
-                {playerStage.emoji}
-              </div>
+              {playerPositions.map((p, index) => (
+                <div 
+                  key={p.id + '-' + index}
+                  className="absolute text-5xl transform -translate-x-1/2 -translate-y-1/2 drop-shadow-md z-10"
+                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                >
+                  {p.emoji}
+                </div>
+              ))}
               <div 
                 className="absolute text-4xl transform -translate-x-1/2 -translate-y-1/2 drop-shadow-md animate-bounce"
                 style={{ left: `${coinPos.x}%`, top: `${coinPos.y}%` }}
@@ -381,25 +282,92 @@
     function App() {
       const [step, setStep] = useState('HOME'); 
       const [playCount, setPlayCount] = useState(0);
-      
+      const [collections, setCollections] = useState([]);
       const [totalCoins, setTotalCoins] = useState(0);
-      const [items, setItems] = useState({ salmon: 0 });
-      const [kummaniLevel, setKummaniLevel] = useState(1);
-      const [kummaniExp, setKummaniExp] = useState(0);
+      const [items, setItems] = useState({ takenoko: 0, satsumaimo: 0 });
       const [cookedDishes, setCookedDishes] = useState([]);
 
-      // 新しい入力構造: 名詞(word)と感想(feeling)を保持
-      const [inputs, setInputs] = useState({ 
-        ate: { word: '', feeling: '' }, 
-        saw: { word: '', feeling: '' }, 
-        wentTo: { word: '', feeling: '' }, 
-        enjoyed: { word: '', feeling: '' } 
-      });
-      const [answers, setAnswers] = useState(null); 
-      const [currentSpeakLine, setCurrentSpeakLine] = useState(0); 
-      const [lineSuccessCount, setLineSuccessCount] = useState(0); 
+      // 4つの回答を保持する配列ステート
+      const [currentActionIndex, setCurrentActionIndex] = useState(0);
+      const [myAnswers, setMyAnswers] = useState(
+        ACTIONS.map(act => ({ action: act, object: null, adjective: null }))
+      );
       
+      const [inputObjectText, setInputObjectText] = useState("");
+      const [inputAdjectiveText, setInputAdjectiveText] = useState("");
       const [isTranslating, setIsTranslating] = useState(false);
+
+      // ★ここにGASでデプロイしたWebアプリのURLを設定してください
+      const GAS_TRANSLATE_URL = "https://script.google.com/macros/s/AKfycbweESd0ikrHJl6Pl5lPnniXgoUWW45_YDUIAXuCBYKkclBs3T47GX83B5q-GAc8Hw3sPQ/exec";
+
+      const translateToEn = async (jaText, type = 'object') => {
+        try {
+          const res = await fetch(`${GAS_TRANSLATE_URL}?text=${encodeURIComponent(jaText)}`);
+          const data = await res.json();
+          let enText = data.text.replace(/[\.\,\!]/g, '');
+          
+          if (type === 'object') {
+            enText = enText.toLowerCase();
+            // 翻訳結果の先頭の不要な動詞等をカット
+            enText = enText.replace(/^i went to /, '').replace(/^i ate /, '').replace(/^i saw /, '').replace(/^i enjoyed /, '').trim();
+          } else if (type === 'adjective') {
+            enText = enText.toLowerCase();
+            enText = enText.replace(/^it is /, '').replace(/^it was /, '').replace(/^a /, '').replace(/^an /, '').replace(/^the /, '').trim();
+          }
+          return enText;
+        } catch(e) {
+          console.error("Translation error", e);
+          if(type === 'object') return "something";
+          if(type === 'adjective') return "nice";
+          return "something"; 
+        }
+      };
+
+      // フォームの入力内容を復元する
+      useEffect(() => {
+        if (step === 'MY_INPUT_ANSWER') {
+          const currentAnswer = myAnswers[currentActionIndex];
+          setInputObjectText(currentAnswer && currentAnswer.object ? currentAnswer.object.ja : "");
+          setInputAdjectiveText(currentAnswer && currentAnswer.adjective ? currentAnswer.adjective.ja : "");
+        }
+      }, [currentActionIndex, step, myAnswers]);
+
+      const handleDecide = async () => {
+        const currentAction = ACTIONS[currentActionIndex];
+        if (!inputObjectText.trim() || !inputAdjectiveText.trim()) {
+          alert(`「${currentAction.prompt}」の答えと「感想」をすべて入力してね！`);
+          return;
+        }
+        setIsTranslating(true);
+        
+        // 1. Object（名詞）の処理
+        const enObjectText = await translateToEn(inputObjectText.trim(), 'object');
+        const finalObject = { name: enObjectText, ja: inputObjectText.trim() };
+
+        // 2. 形容詞の処理
+        let finalAdjective = null;
+        const foundAdj = ADJECTIVES.find(a => a.ja === inputAdjectiveText.trim());
+        if (foundAdj) {
+          finalAdjective = foundAdj;
+        } else {
+          const enAdjText = await translateToEn(inputAdjectiveText.trim(), 'adjective');
+          finalAdjective = { id: 'custom_adj', name: enAdjText, ja: inputAdjectiveText.trim(), emoji: '✨' };
+        }
+
+        // 状態の更新
+        const newAnswers = [...myAnswers];
+        newAnswers[currentActionIndex] = {
+          action: currentAction,
+          object: finalObject,
+          adjective: finalAdjective
+        };
+        setMyAnswers(newAnswers);
+
+        setIsTranslating(false);
+        setStep('MY_SPEAK_ANSWER');
+        setFailCount(0);
+      };
+
       const [worksheetData, setWorksheetData] = useState(null);
       const [showWorksheet, setShowWorksheet] = useState(false);
 
@@ -410,161 +378,145 @@
       const [isListening, setIsListening] = useState(false);
       const [feedbackMsg, setFeedbackMsg] = useState("");
       
+      const [currentGachaMonster, setCurrentGachaMonster] = useState(null);
+      const [isRolling, setIsRolling] = useState(false);
+      const [rollEmoji, setRollEmoji] = useState("🎁");
       const [lastEarnedCoins, setLastEarnedCoins] = useState(0);
+
       const [purchaseEffect, setPurchaseEffect] = useState(null);
-      const [feedEffect, setFeedEffect] = useState(null);
+      const [cookEffect, setCookEffect] = useState(null);
 
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const synth = window.speechSynthesis;
 
       useEffect(() => {
-        const savedCount = localStorage.getItem('englishAppPlayCount_RPG');
+        const savedCount = localStorage.getItem('englishAppPlayCount_Summer');
         if (savedCount) setPlayCount(parseInt(savedCount, 10));
-        const savedCoins = localStorage.getItem('englishAppCoins_RPG');
+        const savedCollections = localStorage.getItem('englishAppCollections_Summer');
+        if (savedCollections) setCollections(JSON.parse(savedCollections));
+        const savedCoins = localStorage.getItem('englishAppCoins_Summer');
         if (savedCoins) setTotalCoins(parseInt(savedCoins, 10));
-        const savedItems = localStorage.getItem('englishAppItems_RPG');
+        const savedItems = localStorage.getItem('englishAppItems_Summer');
         if (savedItems) setItems(JSON.parse(savedItems));
-        
-        const savedLevel = localStorage.getItem('englishAppKummaniLevel');
-        if (savedLevel) setKummaniLevel(parseInt(savedLevel, 10));
-        const savedExp = localStorage.getItem('englishAppKummaniExp');
-        if (savedExp) setKummaniExp(parseInt(savedExp, 10));
-
-        const savedDishes = localStorage.getItem('englishAppDishes_RPG');
+        const savedDishes = localStorage.getItem('englishAppDishes_Summer');
         if (savedDishes) setCookedDishes(JSON.parse(savedDishes));
-
-        const savedWorksheet = localStorage.getItem('englishAppWorksheet_RPG');
-        if (savedWorksheet) setWorksheetData(JSON.parse(savedWorksheet));
+        
+        const savedWorksheet = localStorage.getItem('englishAppWorksheet_Summer');
+        if (savedWorksheet) {
+          try {
+            const parsed = JSON.parse(savedWorksheet);
+            if (Array.isArray(parsed)) {
+              setWorksheetData(parsed);
+            } else {
+              setWorksheetData([parsed]); // 後方互換性
+            }
+          } catch (e) {
+            console.error("Failed to load worksheet data", e);
+          }
+        }
       }, []);
 
-      const saveData = (newCount, newCoins, newItems, newLevel, newExp, newDishes = cookedDishes) => {
-        localStorage.setItem('englishAppPlayCount_RPG', newCount.toString());
-        localStorage.setItem('englishAppCoins_RPG', newCoins.toString());
-        localStorage.setItem('englishAppItems_RPG', JSON.stringify(newItems));
-        localStorage.setItem('englishAppKummaniLevel', newLevel.toString());
-        localStorage.setItem('englishAppKummaniExp', newExp.toString());
-        localStorage.setItem('englishAppDishes_RPG', JSON.stringify(newDishes));
+      const formatPeriod = (text) => text.replace(/\.+$/, '.');
+
+      const saveData = (newCount, newCollections, newCoins, newItems, newDishes) => {
+        localStorage.setItem('englishAppPlayCount_Summer', newCount.toString());
+        localStorage.setItem('englishAppCollections_Summer', JSON.stringify(newCollections));
+        localStorage.setItem('englishAppCoins_Summer', newCoins.toString());
+        if(newItems) localStorage.setItem('englishAppItems_Summer', JSON.stringify(newItems));
+        if(newDishes) localStorage.setItem('englishAppDishes_Summer', JSON.stringify(newDishes));
         
         setPlayCount(newCount);
+        setCollections(newCollections);
         setTotalCoins(newCoins);
-        setItems(newItems);
-        setKummaniLevel(newLevel);
-        setKummaniExp(newExp);
-        setCookedDishes(newDishes);
+        if(newItems) setItems(newItems);
+        if(newDishes) setCookedDishes(newDishes);
       };
 
-      const currentStage = KUMMANI_STAGES.find(s => s.id === kummaniLevel) || KUMMANI_STAGES[0];
-      const nextStage = KUMMANI_STAGES.find(s => s.id === kummaniLevel + 1);
-
-      const translateToEn = async (jaText, type) => {
-        try {
-          let query = jaText;
-          if (type === 'ate') query = `私は${jaText}を食べました`;
-          if (type === 'saw') query = `私は${jaText}を見ました`;
-          if (type === 'wentTo') query = `私は${jaText}に行きました`;
-          if (type === 'enjoyed') query = `私は${jaText}を楽しみました`;
-
-          const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=en&dt=t&q=${encodeURIComponent(query)}`);
-          const data = await res.json();
-          let enText = data[0][0][0].toLowerCase().replace(/[\.\,\!]/g, '').trim();
-          
-          if (type === 'ate') enText = enText.replace(/^i ate /i, '').replace(/^i had /i, '');
-          if (type === 'saw') enText = enText.replace(/^i saw /i, '').replace(/^i watched /i, '').replace(/^i looked at /i, '');
-          if (type === 'wentTo') enText = enText.replace(/^i went to /i, '').replace(/^i visited /i, '');
-          if (type === 'enjoyed') enText = enText.replace(/^i enjoyed /i, '').replace(/^i had fun /i, '');
-
-          return enText.trim() || "something";
-        } catch(e) {
-          console.error("Translation error", e);
-          return "something"; 
-        }
+      const getComAskTexts = () => {
+        return { 
+          text: "Please tell me about your summer vacation.", 
+          jpText: "夏休みの思い出について おしえてください。" 
+        };
       };
 
-      const handleTranslateAll = async () => {
-        if (!inputs.ate.word.trim() || !inputs.ate.feeling || 
-            !inputs.saw.word.trim() || !inputs.saw.feeling || 
-            !inputs.wentTo.word.trim() || !inputs.wentTo.feeling || 
-            !inputs.enjoyed.word.trim() || !inputs.enjoyed.feeling) {
-          alert("４つ すべての「日本語」と「感想」を にゅうりょく・せんたく してね！");
-          return;
+      const getCurrentAnswerTexts = (ans) => {
+        if(!ans || !ans.object || !ans.adjective) return { en: "", ja: "" };
+        const en = formatPeriod(`I ${ans.action.name} ${ans.object.name}. It was ${ans.adjective.name}.`);
+        const ja = `私は夏休みに${ans.object.ja}${ans.action.particle}${ans.action.ja}。それは${ans.adjective.ja}だった。`;
+        return { en, ja };
+      };
+
+      const AnswerTextWithHighlight = ({ isEn, data }) => {
+        if (!data || !data.object || !data.adjective) return null;
+        
+        const { action, object, adjective: adj } = data;
+
+        const highlightClass = "font-bold px-1 rounded mx-1 shadow-sm inline-block";
+        const actionClass = `${highlightClass} text-blue-700 bg-blue-100 border border-blue-200`;
+        const objectClass = `${highlightClass} text-green-700 bg-green-100 border border-green-200`;
+        const adjClass = `${highlightClass} text-yellow-700 bg-yellow-100 border border-yellow-200`;
+
+        if (isEn) {
+          return (
+            <span>
+              I <span className={actionClass}>{action.name}</span> <span className={objectClass}>{object.name}</span>.<br/>
+              It was <span className={adjClass}>{adj.name}</span>.
+            </span>
+          );
+        } else {
+          return (
+            <span>
+              私は夏休みに<span className={objectClass}>{object.ja}</span>{action.particle}<span className={actionClass}>{action.ja}</span>。<br/>
+              それは<span className={adjClass}>{adj.ja}</span>だった。
+            </span>
+          );
         }
-        setIsTranslating(true);
-        
-        const ateEn = await translateToEn(inputs.ate.word, 'ate');
-        const sawEn = await translateToEn(inputs.saw.word, 'saw');
-        const wentToEn = await translateToEn(inputs.wentTo.word, 'wentTo');
-        const enjoyedEn = await translateToEn(inputs.enjoyed.word, 'enjoyed');
-        
-        setAnswers({
-          ate: { ja: inputs.ate.word, en: ateEn, feeling: inputs.ate.feeling },
-          saw: { ja: inputs.saw.word, en: sawEn, feeling: inputs.saw.feeling },
-          wentTo: { ja: inputs.wentTo.word, en: wentToEn, feeling: inputs.wentTo.feeling },
-          enjoyed: { ja: inputs.enjoyed.word, en: enjoyedEn, feeling: inputs.enjoyed.feeling }
-        });
-        
-        setIsTranslating(false);
-        setStep('MY_SPEAK_ANSWER');
-        setCurrentSpeakLine(0);
-        setLineSuccessCount(0);
-        setFailCount(0);
       };
 
       const saveWorksheet = () => {
-        const data = { answers };
-        localStorage.setItem('englishAppWorksheet_RPG', JSON.stringify(data));
-        setWorksheetData(data);
+        localStorage.setItem('englishAppWorksheet_Summer', JSON.stringify(myAnswers));
+        setWorksheetData(myAnswers);
       };
 
       const startApp = () => {
         setFailCount(0);
-        setCurrentSpeakLine(0);
-        setLineSuccessCount(0);
+        setCurrentActionIndex(0);
+        setMyAnswers(ACTIONS.map(act => ({ action: act, object: null, adjective: null })));
         setStep('COM_ASK');
       };
 
-      const buyItem = () => {
-        if (totalCoins >= 10) {
-          const newCoins = totalCoins - 10;
-          const newItems = { ...items, salmon: (items.salmon || 0) + 1 };
-          saveData(playCount, newCoins, newItems, kummaniLevel, kummaniExp, cookedDishes);
+      const buyItem = (itemType, cost) => {
+        if (totalCoins >= cost) {
+          const newCoins = totalCoins - cost;
+          const newItems = { ...items, [itemType]: items[itemType] + 1 };
+          saveData(playCount, collections, newCoins, newItems, cookedDishes);
           
-          setPurchaseEffect('salmon');
+          setPurchaseEffect(itemType);
           setTimeout(() => setPurchaseEffect(null), 1500);
         } else {
           alert("コインがたりないよ！ミニゲームであつめてね。");
         }
       };
 
-      const feedKummani = () => {
-        if (items.salmon >= 1) {
-          const newItems = { ...items, salmon: items.salmon - 1 };
+      const cookDish = () => {
+        if (items.takenoko >= 1 && items.satsumaimo >= 1) {
+          const newItems = { takenoko: items.takenoko - 1, satsumaimo: items.satsumaimo - 1 };
           setItems(newItems);
-          
-          const unownedDishes = DISHES.filter(d => !cookedDishes.includes(d));
-          let dish = unownedDishes.length > 0 ? unownedDishes[Math.floor(Math.random() * unownedDishes.length)] : DISHES[Math.floor(Math.random() * DISHES.length)];
-          
-          setFeedEffect({ phase: 'cooking', dish: null });
-          
+          saveData(playCount, collections, totalCoins, newItems, cookedDishes);
+
+          setCookEffect('cooking');
           setTimeout(() => {
-            setFeedEffect({ phase: 'done', dish: dish });
-            const newDishes = cookedDishes.includes(dish) ? cookedDishes : [...cookedDishes, dish];
+            const unownedDishes = DISHES.filter(d => !cookedDishes.includes(d));
+            const newDish = unownedDishes.length > 0 ? unownedDishes[Math.floor(Math.random() * unownedDishes.length)] : DISHES[Math.floor(Math.random() * DISHES.length)];
             
-            setTimeout(() => {
-              const newExp = kummaniExp + 1;
-              
-              if (nextStage && newExp >= nextStage.reqExp) {
-                setFeedEffect({ phase: 'evolving', from: currentStage, to: nextStage });
-                setTimeout(() => {
-                   saveData(playCount, totalCoins, newItems, nextStage.id, newExp, newDishes);
-                   setFeedEffect({ phase: 'evolved', to: nextStage });
-                   setTimeout(() => setFeedEffect(null), 3000);
-                }, 2500);
-              } else {
-                saveData(playCount, totalCoins, newItems, kummaniLevel, newExp, newDishes);
-                setFeedEffect(null);
-              }
-            }, 2000);
-          }, 1500);
+            setCookEffect(newDish);
+            
+            if (!cookedDishes.includes(newDish)) {
+              const newDishes = [...cookedDishes, newDish];
+              setCookedDishes(newDishes);
+              saveData(playCount, collections, totalCoins, newItems, newDishes);
+            }
+          }, 2000);
         }
       };
 
@@ -572,18 +524,38 @@
         setFailCount(0);
         setFeedbackMsg("");
         setIsListening(false);
-        setCurrentSpeakLine(0);
-        setLineSuccessCount(0);
         
         switch(step) {
-          case 'COM_ASK': setStep('HOME'); break;
-          case 'MY_INPUT_ANSWER': setStep('COM_ASK'); break;
-          case 'MY_SPEAK_ANSWER': setStep('MY_INPUT_ANSWER'); break;
-          case 'WORKSHEET_ANSWER': setStep('MY_SPEAK_ANSWER'); break;
-          case 'COM_ANSWER': setStep('WORKSHEET_ANSWER'); break;
-          case 'WORKSHEET_CHECK': setStep('COM_ANSWER'); break;
-          case 'WORKSHEET_STAMP': setStep('WORKSHEET_CHECK'); break;
-          case 'QUIZ_INTRO': setStep('WORKSHEET_STAMP'); break;
+          case 'COM_ASK': 
+            setStep('HOME'); 
+            break;
+          case 'MY_INPUT_ANSWER': 
+            if (currentActionIndex > 0) {
+              setCurrentActionIndex(prev => prev - 1);
+              setStep('MY_SPEAK_ANSWER');
+            } else {
+              setStep('COM_ASK');
+            }
+            break;
+          case 'MY_SPEAK_ANSWER': 
+            setStep('MY_INPUT_ANSWER'); 
+            break;
+          case 'WORKSHEET_ANSWER': 
+            setCurrentActionIndex(ACTIONS.length - 1);
+            setStep('MY_SPEAK_ANSWER'); 
+            break;
+          case 'COM_ANSWER': 
+            setStep('WORKSHEET_ANSWER'); 
+            break;
+          case 'WORKSHEET_CHECK': 
+            setStep('COM_ANSWER'); 
+            break;
+          case 'WORKSHEET_STAMP': 
+            setStep('WORKSHEET_CHECK'); 
+            break;
+          case 'QUIZ_INTRO': 
+            setStep('WORKSHEET_STAMP'); 
+            break;
           default: break;
         }
       };
@@ -607,16 +579,17 @@
 
       useEffect(() => {
         if (step === 'COM_ASK') {
-          setTimeout(() => speak(COM_ASK_TEXT.text), 500);
+          const { text } = getComAskTexts();
+          setTimeout(() => speak(text), 500);
         } else if (step === 'COM_ANSWER') {
-          setTimeout(() => speak(COM_ANS_TEXT.text), 500);
+          setTimeout(() => speak(COM_ANSWERS.default.en), 500);
         }
       }, [step, speak]);
 
       const prepareQuiz = () => {
         const q = [];
         while(q.length < 4) {
-          const r = Math.floor(Math.random() * QUIZ_WORDS.length);
+          const r = Math.floor(Math.random() * ADJECTIVES.length);
           if(!q.includes(r)) q.push(r);
         }
         setQuizQuestions(q);
@@ -656,59 +629,24 @@
       };
 
       const checkPronunciation = (transcript, targetType) => {
-        const trans = transcript.toLowerCase();
         let isCorrect = false;
+        const trans = transcript.toLowerCase();
         
         if (targetType === 'MY_ANSWER') {
-          let targetWord = "";
-          let targetFeeling = "";
+          const currentAnswer = myAnswers[currentActionIndex];
+          const hasAction = trans.includes(currentAnswer.action.name.toLowerCase());
           
-          if (currentSpeakLine === 0) { targetWord = answers.ate.en.split(' ')[0]; targetFeeling = answers.ate.feeling; }
-          else if (currentSpeakLine === 1) { targetWord = answers.saw.en.split(' ')[0]; targetFeeling = answers.saw.feeling; }
-          else if (currentSpeakLine === 2) { targetWord = answers.wentTo.en.split(' ')[0]; targetFeeling = answers.wentTo.feeling; }
-          else if (currentSpeakLine === 3) { targetWord = answers.enjoyed.en.split(' ')[0]; targetFeeling = answers.enjoyed.feeling; }
-
-          // 名詞または感想の単語が聞き取れていれば正解とする（難易度調整）
-          if ((targetWord.length > 1 && trans.includes(targetWord)) || 
-              (targetFeeling.length > 1 && trans.includes(targetFeeling))) {
-              isCorrect = true;
-          }
-          if (trans.length > 15) isCorrect = true; // 救済処置
-
-          if (isCorrect) {
-             const newSuccessCount = lineSuccessCount + 1;
-             
-             if (newSuccessCount >= 3) {
-                 if (currentSpeakLine < 3) {
-                    setFeedbackMsg("Excellent! 👏 3回言えたね！\n次の文を言ってね！");
-                    setTimeout(() => {
-                       setCurrentSpeakLine(curr => curr + 1);
-                       setLineSuccessCount(0);
-                       setFeedbackMsg("");
-                       setFailCount(0);
-                    }, 2000);
-                 } else {
-                    setFeedbackMsg("Perfect! 👏 全部言えたね！");
-                    setLineSuccessCount(3);
-                    setCurrentSpeakLine(4);
-                    setFailCount(0);
-                 }
-             } else {
-                 setLineSuccessCount(newSuccessCount);
-                 setFeedbackMsg(`Good! 👏 \nあと ${3 - newSuccessCount} 回言ってね！`);
-                 setTimeout(() => {
-                    setFeedbackMsg("");
-                 }, 1500);
-             }
-          } else {
-             handleFail();
-          }
-          return;
+          const objWords = currentAnswer.object.name.toLowerCase().split(' ').filter(w => w.length > 2);
+          const hasObject = objWords.length > 0 ? objWords.some(w => trans.includes(w)) : trans.includes(currentAnswer.object.name.toLowerCase());
+          const hasAdjective = trans.includes(currentAnswer.adjective.name.toLowerCase());
+          
+          isCorrect = (hasAction && hasAdjective) || (hasAction && hasObject) || (hasObject && hasAdjective);
+          if (!isCorrect && trans.length > 10) isCorrect = true; // 救済処置
         } 
         else if (targetType === 'QUIZ') {
           if (quizQuestions.length > 0 && currentQuizIndex < quizQuestions.length) {
-            const qWord = QUIZ_WORDS[quizQuestions[currentQuizIndex]];
-            isCorrect = qWord.keywords.some(kw => trans.includes(kw));
+            const qAdj = ADJECTIVES[quizQuestions[currentQuizIndex]];
+            isCorrect = trans.includes(qAdj.name.toLowerCase());
           }
         }
 
@@ -725,52 +663,84 @@
         setFailCount(0);
         setFeedbackMsg("");
         
-        if (fromType === 'MY_ANSWER') setStep('WORKSHEET_ANSWER');
+        if (fromType === 'MY_ANSWER') {
+          if (currentActionIndex < ACTIONS.length - 1) {
+            // 次の質問へ進む
+            setCurrentActionIndex(prev => prev + 1);
+            setStep('MY_INPUT_ANSWER');
+          } else {
+            // 全て完了したらワークシートへ
+            setStep('WORKSHEET_ANSWER');
+          }
+        }
         if (fromType === 'QUIZ') {
-          if (currentQuizIndex + 1 < 4) setCurrentQuizIndex(prev => prev + 1);
-          else setStep('MINIGAME_INTRO');
+          if (currentQuizIndex + 1 < 4) {
+            setCurrentQuizIndex(prev => prev + 1);
+          } else {
+            setStep('GACHA');
+          }
         }
       };
 
-      const handleInputChange = (id, field, val) => setInputs(prev => ({ ...prev, [id]: { ...prev[id], [field]: val } }));
-      const handleWordOptionClick = (id, opt) => setInputs(prev => ({ ...prev, [id]: { ...prev[id], word: opt } }));
-      const handleFeelingClick = (id, feeling) => setInputs(prev => ({ ...prev, [id]: { ...prev[id], feeling: feeling } }));
+      const rollGacha = () => {
+        setIsRolling(true);
+        const intervalId = setInterval(() => {
+          setRollEmoji(MONSTERS[Math.floor(Math.random() * MONSTERS.length)].emoji);
+        }, 100);
+
+        const ownedIds = collections.map(c => c.id);
+        const unowned = MONSTERS.filter(m => !ownedIds.includes(m.id));
+        const newMonster = unowned.length > 0 ? unowned[Math.floor(Math.random() * unowned.length)] : MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
+
+        setTimeout(() => {
+          clearInterval(intervalId);
+          setIsRolling(false);
+          setCurrentGachaMonster(newMonster);
+          if (!ownedIds.includes(newMonster.id)) {
+            saveData(playCount + 1, [...collections, newMonster], totalCoins, items, cookedDishes);
+          } else {
+            saveData(playCount + 1, collections, totalCoins, items, cookedDishes);
+          }
+        }, 2500);
+      };
+
+      const renderHeader = (title) => (
+        <div className="bg-blue-500 text-white p-4 rounded-t-2xl flex items-center justify-center font-bold text-xl mb-4 shadow-md">
+          {title}
+        </div>
+      );
+
+      const CharacterMessage = ({ text, jpText, emoji = "🧑", isCom = false, name }) => (
+        <div className="flex flex-col items-center mb-8">
+          <div className={`text-7xl mb-2 ${isCom ? 'bg-green-100' : 'bg-gray-100'} rounded-full w-24 h-24 flex items-center justify-center shadow-inner border-4 border-white`}>{emoji}</div>
+          {name && <div className="font-bold text-gray-600 mb-2">{name}</div>}
+          <div className={`bg-white border-4 ${isCom ? 'border-green-200' : 'border-blue-200'} p-6 rounded-3xl rounded-tl-none shadow-md relative max-w-sm w-full text-left`}>
+            <button onClick={() => speak(text)} className="absolute -top-5 -right-5 bg-blue-100 p-3 rounded-full text-blue-600 hover:bg-blue-200 shadow-sm text-2xl">🔊</button>
+            <p className="text-2xl font-bold text-gray-800 leading-snug">{text}</p>
+            {jpText && <p className="text-gray-500 mt-3 text-sm font-bold">（{jpText}）</p>}
+          </div>
+        </div>
+      );
 
       let content = null;
 
       if (step === 'HOME') {
         content = (
-          <div className="min-h-screen p-4 md:p-8 flex flex-col justify-center relative bg-blue-50 pb-20 overflow-hidden">
-            {feedEffect && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative">
-                  {feedEffect.phase === 'cooking' && (
+          <div className="min-h-screen p-4 md:p-8 flex flex-col justify-center relative bg-blue-50 pb-20">
+            {cookEffect && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+                  {cookEffect === 'cooking' ? (
                     <div className="animate-pulse">
-                      <div className="text-8xl mb-4">🍳</div>
-                      <p className="text-2xl font-bold text-orange-600">シャケを おりょうり中...</p>
+                      <div className="text-8xl mb-4">🍲</div>
+                      <p className="text-2xl font-bold text-orange-600">おなべで<br/>おりょうり中...</p>
                     </div>
-                  )}
-                  {feedEffect.phase === 'done' && (
+                  ) : (
                     <div className="animate-fade-in-up">
                       <div className="text-8xl mb-4">✨🍽️✨</div>
-                      <p className="text-2xl font-bold text-orange-700 mb-6">{feedEffect.dish}</p>
-                      <div className="text-7xl animate-bounce mb-2">{currentStage.emoji}</div>
-                      <p className="text-lg font-bold text-gray-600 bg-gray-100 rounded-xl p-2 inline-block">クッマーニが 食べているよ！<br/>EXP +1</p>
-                    </div>
-                  )}
-                  {feedEffect.phase === 'evolving' && (
-                    <div>
-                      <p className="text-2xl font-bold text-gray-800 mb-8">おや…？<br/>クッマーニの ようすが…！</p>
-                      <div className="text-9xl animate-flash drop-shadow-2xl">{feedEffect.from.emoji}</div>
-                    </div>
-                  )}
-                  {feedEffect.phase === 'evolved' && (
-                    <div className="animate-bounce-in">
-                      <p className="text-3xl font-extrabold text-yellow-500 mb-8">おめでとう！</p>
-                      <div className="text-9xl mb-8 drop-shadow-[0_0_50px_rgba(253,224,71,0.8)]">{feedEffect.to.emoji}</div>
-                      <p className="text-2xl font-bold text-gray-800">
-                        <span className="text-blue-600 text-3xl">{feedEffect.to.name}</span> に<br/>しんかした！
-                      </p>
+                      <p className="text-gray-500 font-bold mb-2 text-lg">かんせい！</p>
+                      <p className="text-2xl font-bold text-orange-700 mb-8 border-b-2 border-orange-200 pb-4">{cookEffect}</p>
+                      <button onClick={() => setCookEffect(null)} className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105">おいしそう！</button>
                     </div>
                   )}
                 </div>
@@ -779,19 +749,23 @@
 
             {purchaseEffect && (
               <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
-                <div className="animate-bounce-in text-9xl drop-shadow-2xl">🐟</div>
+                <div className="animate-bounce-in text-9xl drop-shadow-2xl">
+                  {purchaseEffect === 'takenoko' ? '🎋' : '🍠'}
+                </div>
               </div>
             )}
 
             <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 font-bold px-6 py-2 rounded-full border-4 border-yellow-200 shadow-lg text-xl z-10 flex gap-4">
               <span>🪙 {totalCoins}</span>
-              <span>🐟 {items.salmon || 0}</span>
+              <span>🎋 {items.takenoko || 0}</span>
+              <span>🍠 {items.satsumaimo || 0}</span>
             </div>
             
             <div className="max-w-2xl w-full mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-blue-200 mt-16 md:mt-12">
               <div className="bg-gradient-to-r from-blue-400 to-indigo-500 p-8 text-center text-white relative">
-                <h1 className="text-3xl md:text-4xl font-extrabold mb-4 drop-shadow-md mt-4">えいごで はなそう！</h1>
+                <h1 className="text-3xl md:text-4xl font-extrabold mb-4 drop-shadow-md mt-4">夏休みの思い出を<br/>えいごではなそう！</h1>
                 <p className="text-lg bg-white/20 inline-block px-4 py-2 rounded-full font-medium mb-2">🎧 イヤホンを つけましょう 🎧</p>
+                <p className="text-sm font-bold opacity-90">じぶんの 声が うまく 入らない ときは、<br/>イヤホンを とって やってみよう！</p>
               </div>
               
               <div className="p-8 text-center">
@@ -800,9 +774,15 @@
                     <p className="text-pink-800 font-bold text-base md:text-lg leading-relaxed mb-3">
                       このまま繰り返し練習するか、<br/>eステkids「<a href="https://e-st.kids-ebc.com/login/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">https://e-st.kids-ebc.com/login/</a>」をしましょう。
                     </p>
-                    <a href="https://e-st.kids-ebc.com/login/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow transition transform hover:scale-105 mt-2">
+                    <a href="https://e-st.kids-ebc.com/login/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow transition transform hover:scale-105">
                       <span className="mr-2">📚</span> eステkids をひらく
                     </a>
+                  </div>
+                )}
+
+                {playCount > 0 && (
+                  <div className="mb-6 bg-orange-100 p-4 rounded-xl border-2 border-orange-200 animate-pulse">
+                    <p className="text-orange-700 font-bold">ゲームで コインを あつめて、たくさん<br/>タケノコや さつまいもを ゲットしよう！</p>
                   </div>
                 )}
 
@@ -810,214 +790,195 @@
                   onClick={startApp}
                   className="bg-red-500 hover:bg-red-600 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 mx-auto mb-8 flex items-center"
                 >
-                  <span className="mr-2 text-2xl">▶️</span> えいかいわ スタート！
+                  <span className="mr-2 text-2xl">▶️</span> スタート！
                 </button>
 
                 {playCount > 0 && (
-                  <div className="mt-8 border-t-4 border-dashed border-gray-200 pt-8">
-                    <h2 className="text-2xl font-bold text-gray-700 mb-6">🐻 クッマーニの おせわ 🐟</h2>
-                    
-                    <div className="bg-gradient-to-b from-blue-50 to-white p-6 rounded-3xl border-4 border-blue-100 mb-6 relative shadow-inner">
-                      <div className="text-8xl mb-4 drop-shadow-lg">{currentStage.emoji}</div>
-                      <h3 className="text-2xl font-bold text-blue-800 mb-2">{currentStage.name}</h3>
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="bg-green-50 p-4 rounded-2xl border-2 border-green-200 relative overflow-hidden">
+                        <h3 className="font-bold text-green-700 mb-2">🎋 タケノコをかう (10🪙)</h3>
+                        <button onClick={() => buyItem('takenoko', 10)} className="bg-green-500 text-white px-4 py-2 rounded-full font-bold shadow hover:bg-green-600 active:scale-95 relative z-10">かう！</button>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-2xl border-2 border-purple-200 relative overflow-hidden">
+                        <h3 className="font-bold text-purple-700 mb-2">🍠 さつまいもをかう (10🪙)</h3>
+                        <button onClick={() => buyItem('satsumaimo', 10)} className="bg-purple-500 text-white px-4 py-2 rounded-full font-bold shadow hover:bg-purple-600 active:scale-95 relative z-10">かう！</button>
+                      </div>
+                    </div>
+
+                    <div className="bg-orange-50 p-4 rounded-2xl border-2 border-orange-200 mb-8">
+                      <h3 className="font-bold text-orange-800 mb-2 text-lg">👨‍🍳 おみせで お料理をつくる</h3>
+                      <p className="text-sm text-orange-700 font-bold mb-3">タケノコと サツマイモが １こずつ ひつようだよ！</p>
+                      <button 
+                        onClick={cookDish} 
+                        disabled={items.takenoko < 1 || items.satsumaimo < 1}
+                        className={`text-white px-6 py-3 rounded-full font-bold shadow text-lg flex items-center justify-center mx-auto transition ${items.takenoko >= 1 && items.satsumaimo >= 1 ? 'bg-orange-500 hover:bg-orange-600 transform hover:scale-105' : 'bg-gray-400 opacity-70 cursor-not-allowed'}`}
+                      >
+                        <span className="mr-2">🍳</span>おりょうりする！
+                      </button>
                       
-                      {nextStage ? (
-                        <div className="w-full max-w-xs mx-auto">
-                          <div className="flex justify-between text-sm font-bold text-gray-500 mb-1">
-                            <span>Lv.{currentStage.id}</span>
-                            <span>つぎまで: あと {nextStage.reqExp - kummaniExp}</span>
-                          </div>
-                          <div className="h-4 bg-gray-200 rounded-full overflow-hidden border border-gray-300">
-                            <div 
-                              className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500"
-                              style={{ width: `${Math.min(100, Math.max(0, ((kummaniExp - currentStage.reqExp) / (nextStage.reqExp - currentStage.reqExp)) * 100))}%` }}
-                            ></div>
-                          </div>
+                      {cookedDishes.length > 0 && (
+                        <div className="mt-6 text-left border-t-2 border-orange-200 pt-4">
+                          <p className="font-bold text-orange-800 mb-2">✨ つくった お料理 ({cookedDishes.length})</p>
+                          <ul className="list-disc pl-5 text-sm text-gray-700 font-bold space-y-1">
+                            {cookedDishes.map((dish, i) => <li key={i}>{dish}</li>)}
+                          </ul>
                         </div>
-                      ) : (
-                        <div className="text-orange-500 font-bold bg-orange-50 inline-block px-4 py-1 rounded-full border border-orange-200">✨ さいしゅう しんか ✨</div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-cyan-50 p-6 rounded-2xl border-2 border-cyan-200 flex flex-col items-center">
-                        <div className="text-4xl mb-2">🐟</div>
-                        <h3 className="font-bold text-cyan-800 mb-4">シャケをかう (10🪙)</h3>
-                        <button onClick={buyItem} className="bg-cyan-500 text-white px-6 py-3 rounded-full font-bold shadow hover:bg-cyan-600 active:scale-95 w-full text-lg">買う！</button>
-                      </div>
-                      
-                      <div className="bg-orange-50 p-6 rounded-2xl border-2 border-orange-200 flex flex-col items-center">
-                        <div className="text-4xl mb-2">🍳</div>
-                        <h3 className="font-bold text-orange-800 mb-4">おりょうりして あげる</h3>
-                        <button 
-                          onClick={feedKummani} 
-                          disabled={items.salmon < 1}
-                          className={`px-6 py-3 rounded-full font-bold shadow w-full text-lg transition ${items.salmon >= 1 ? 'bg-orange-500 hover:bg-orange-600 text-white transform hover:scale-105' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
-                        >
-                          {items.salmon >= 1 ? 'あげる！' : 'シャケが ないよ'}
-                        </button>
+                    <div className="bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
+                      <h2 className="text-xl font-bold text-yellow-700 mb-4">⭐ あつめたモンスター ({collections.length}/10)</h2>
+                      <div className="grid grid-cols-5 gap-2 md:gap-4">
+                        {collections.map(m => (
+                          <div key={m.id} className={`${m.color} p-2 rounded-xl text-center shadow-sm text-2xl relative group cursor-default`} title={m.name}>
+                            {m.emoji}
+                            <div className="absolute hidden group-hover:block bg-black text-white text-xs p-1 rounded -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap z-10">{m.name}</div>
+                          </div>
+                        ))}
+                        {Array.from({ length: 10 - collections.length }).map((_, i) => (
+                          <div key={`empty-${i}`} className="bg-gray-100 p-2 rounded-xl text-center border-2 border-dashed border-gray-300 text-2xl opacity-50">❓</div>
+                        ))}
                       </div>
                     </div>
-
-                    {cookedDishes.length > 0 && (
-                      <div className="mt-6 p-4 bg-orange-50 rounded-2xl text-left border-2 border-orange-200 shadow-sm">
-                        <h4 className="font-bold text-orange-800 mb-3 flex items-center"><span className="mr-2 text-xl">🍽️</span> 作った料理のきろく ({cookedDishes.length} / {DISHES.length})</h4>
-                        <ul className="text-sm font-bold text-gray-700 list-disc pl-6 space-y-1">
-                          {cookedDishes.slice(-5).map((d, i) => <li key={i}>{getDishWithEmoji(d)}</li>)}
-                        </ul>
-                        {cookedDishes.length > 5 && <p className="text-xs text-gray-500 mt-2 pl-2">...ほか {cookedDishes.length - 5} こ</p>}
-                      </div>
-                    )}
-                  </div>
+                  </>
                 )}
               </div>
             </div>
           </div>
         );
       } else if (step === 'COM_ASK') {
+        const { text, jpText } = getComAskTexts();
         content = (
           <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
             <BackButton />
             <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-green-200 text-center mt-12">
               {renderHeader("クッマーニからの しつもん")}
               <CharacterMessage 
-                text={COM_ASK_TEXT.text} 
-                jpText={COM_ASK_TEXT.jpText} 
+                text={text} 
+                jpText={jpText} 
                 isCom={true}
-                emoji={currentStage.emoji}
-                name={currentStage.name}
-                onSpeak={speak}
+                emoji="🐻"
+                name="クッマーニ"
               />
+              <div className="bg-green-100 text-green-800 font-bold p-4 rounded-xl mb-6 shadow-inner text-sm border-2 border-green-200">
+                これから「食べたもの」「見たもの」「行った場所」「楽しんだこと」の<span className="text-xl mx-1">４つ</span>について、順番にこたえていくよ！
+              </div>
               <button onClick={() => setStep('MY_INPUT_ANSWER')} className="w-full bg-green-500 hover:bg-green-600 text-white text-xl font-bold py-4 rounded-xl shadow-md">こたえる</button>
             </div>
           </div>
         );
       } else if (step === 'MY_INPUT_ANSWER') {
+        const currentAction = ACTIONS[currentActionIndex];
+
         content = (
-          <div className="min-h-screen bg-pink-50 p-4 flex flex-col items-center relative py-16">
+          <div className="min-h-screen bg-pink-50 p-4 flex items-center justify-center relative">
             <BackButton />
-            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-4 md:p-6 border-4 border-pink-200 mt-8">
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-6 border-4 border-pink-200 text-center mt-12 max-h-[90vh] overflow-y-auto">
               {renderHeader("じぶんの こたえ")}
-              <p className="text-gray-600 font-bold mb-4 text-center">なつやすみに あったことを おしえてね！</p>
               
-              <div className="space-y-6 px-2 pb-4">
-                <InputSection id="ate" label="I ate ... (食べたもの)" icon="🍎" placeholder="例: スイカ" color="red" options={SUGGESTIONS.ate} value={inputs.ate} onChange={handleInputChange} onWordOptionClick={handleWordOptionClick} onFeelingClick={handleFeelingClick} />
-                <InputSection id="saw" label="I saw ... (見たもの)" icon="👀" placeholder="例: はなび" color="blue" options={SUGGESTIONS.saw} value={inputs.saw} onChange={handleInputChange} onWordOptionClick={handleWordOptionClick} onFeelingClick={handleFeelingClick} />
-                <InputSection id="wentTo" label="I went to ... (行った場所)" icon="🚶‍♂️" placeholder="例: うみ" color="green" options={SUGGESTIONS.wentTo} value={inputs.wentTo} onChange={handleInputChange} onWordOptionClick={handleWordOptionClick} onFeelingClick={handleFeelingClick} />
-                <InputSection id="enjoyed" label="I enjoyed ... (楽しんだこと)" icon="✨" placeholder="例: すいえい" color="yellow" options={SUGGESTIONS.enjoyed} value={inputs.enjoyed} onChange={handleInputChange} onWordOptionClick={handleWordOptionClick} onFeelingClick={handleFeelingClick} />
+              <div className="bg-white p-4 rounded-2xl mb-4 border-2 border-pink-100">
+                <div className="inline-block bg-pink-100 text-pink-800 font-bold px-4 py-1 rounded-full mb-3 text-sm md:text-base border-2 border-pink-200 shadow-sm">
+                  {currentActionIndex + 1} / {ACTIONS.length} つめ
+                </div>
+                <h3 className="text-lg md:text-xl font-bold mb-3 text-center text-pink-800 border-b-2 border-pink-200 pb-2">{currentAction.emoji} {currentAction.prompt}</h3>
+                <div className="bg-green-50 p-3 rounded-xl border border-green-100">
+                  <input 
+                    type="text" 
+                    value={inputObjectText} 
+                    onChange={(e) => setInputObjectText(e.target.value)}
+                    placeholder={currentAction.placeholder} 
+                    className="w-full p-3 border-2 border-green-300 rounded-xl text-lg font-bold focus:outline-none focus:border-green-500 bg-white shadow-inner mb-2" 
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl mb-6 border-2 border-pink-100">
+                <h3 className="text-lg md:text-xl font-bold mb-3 text-center text-pink-800 border-b-2 border-pink-200 pb-2">✨ その感想は？</h3>
+                <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100">
+                  <input 
+                    type="text" 
+                    value={inputAdjectiveText} 
+                    onChange={(e) => setInputAdjectiveText(e.target.value)}
+                    placeholder="例: 楽しい、美味しい など" 
+                    className="w-full p-3 border-2 border-yellow-300 rounded-xl text-lg font-bold focus:outline-none focus:border-yellow-500 bg-white shadow-inner mb-2" 
+                  />
+                  <div className="flex flex-wrap gap-2 justify-center max-h-40 overflow-y-auto pr-2">
+                     {ADJECTIVES.map(adj => (
+                         <button key={adj.id} onClick={() => {
+                           setInputAdjectiveText(adj.ja);
+                         }} className={`text-xs border px-2 py-1 rounded shadow-sm ${inputAdjectiveText === adj.ja ? 'bg-yellow-200 border-yellow-500 font-bold' : 'bg-white border-yellow-200 hover:bg-yellow-100'}`}>{adj.emoji} {adj.ja}</button>
+                     ))}
+                  </div>
+                </div>
               </div>
 
               <button 
-                onClick={handleTranslateAll} 
+                onClick={handleDecide} 
                 disabled={isTranslating}
-                className="w-full mt-4 bg-pink-500 hover:bg-pink-600 text-white text-xl font-bold py-5 rounded-xl shadow-md flex justify-center items-center sticky bottom-4 z-30"
+                className="w-full bg-pink-500 hover:bg-pink-600 text-white text-xl font-bold py-4 rounded-xl shadow-md flex justify-center items-center"
               >
-                {isTranslating ? <span className="animate-pulse">ほんやく中...</span> : 'えいごに して けってい！'}
+                {isTranslating ? <span className="animate-pulse">ほんやく中...</span> : 'けってい！'}
               </button>
             </div>
           </div>
         );
       } else if (step === 'MY_SPEAK_ANSWER') {
-        const sentenceLines = [
-          `I ate ${answers.ate.en}. It was ${answers.ate.feeling}.`,
-          `I saw ${answers.saw.en}. It was ${answers.saw.feeling}.`,
-          `I went to ${answers.wentTo.en}. It was ${answers.wentTo.feeling}.`,
-          `I enjoyed ${answers.enjoyed.en}. It was ${answers.enjoyed.feeling}.`
-        ];
-
+        const currentAnswer = myAnswers[currentActionIndex];
+        const { en: sentence } = getCurrentAnswerTexts(currentAnswer);
+        let emoji = currentAnswer.action.emoji + ' ' + (currentAnswer.adjective ? currentAnswer.adjective.emoji : '');
+        
         content = (
-          <div className="min-h-screen bg-pink-50 p-4 flex items-center justify-center relative py-12">
+          <div className="min-h-screen bg-pink-50 p-4 flex items-center justify-center relative">
             <BackButton />
-            <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 border-4 border-pink-200 text-center mt-12">
-              {renderHeader("１ぎょうずつ いってみよう！")}
-              <div className="bg-pink-100 p-4 md:p-6 rounded-2xl mb-6 shadow-inner text-left">
-                <div className="space-y-4">
-                   {[0,1,2,3].map((lineIndex) => {
-                      const isActive = currentSpeakLine === lineIndex;
-                      const isDone = currentSpeakLine > lineIndex;
-                      const sentence = sentenceLines[lineIndex];
-                      
-                      let displayClass = "transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-3 ";
-                      if (isActive) displayClass += "opacity-100 transform scale-105 border-4 border-pink-400 bg-white p-4 md:p-5 rounded-xl shadow-md relative z-10";
-                      else if (isDone) displayClass += "opacity-50 text-gray-500 bg-gray-100 p-3 md:p-4 rounded-xl border border-gray-200";
-                      else displayClass += "opacity-40 text-gray-400 p-3 md:p-4 bg-white/50 rounded-xl";
-
-                      return (
-                         <div key={lineIndex} className={displayClass}>
-                            <span className={`text-lg md:text-xl font-worksheet font-bold ${isDone ? 'line-through' : ''} leading-relaxed`}>
-                              {['①','②','③','④'][lineIndex]} {sentence}
-                            </span>
-                            <div className="flex items-center self-end md:self-auto gap-2">
-                               {isActive && (
-                                 <div className="text-xl flex gap-1 mr-2 bg-pink-50 px-3 py-1.5 rounded-full shadow-inner border border-pink-100">
-                                   {Array.from({length: 3}).map((_, i) => (
-                                     <span key={i}>{i < lineSuccessCount ? '⭐' : '☆'}</span>
-                                   ))}
-                                 </div>
-                               )}
-                               {isActive && (
-                                 <button onClick={() => speak(sentence)} className="text-pink-600 bg-pink-50 p-3 rounded-full shadow-sm hover:bg-pink-100 border border-pink-200 text-xl">
-                                   🔊
-                                 </button>
-                               )}
-                               {isDone && <span className="text-green-500 text-3xl font-bold ml-2">✓</span>}
-                            </div>
-                         </div>
-                      );
-                   })}
-                </div>
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-pink-200 text-center mt-12">
+              {renderHeader(`えいごで いってみよう！ (${currentActionIndex + 1}/${ACTIONS.length})`)}
+              <div className="bg-pink-100 p-6 rounded-2xl mb-6 shadow-inner">
+                <div className="text-4xl mb-4">{emoji}</div>
+                <p className="text-xl md:text-2xl font-bold text-pink-700 mb-4 leading-relaxed tracking-wide text-left inline-block">
+                  <AnswerTextWithHighlight isEn={true} data={currentAnswer} />
+                </p>
+                <p className="text-sm md:text-base font-bold text-gray-600 mb-4 bg-white/50 p-3 rounded-xl border border-pink-200 leading-relaxed text-left">
+                  <AnswerTextWithHighlight isEn={false} data={currentAnswer} />
+                </p>
+                <button onClick={() => speak(sentence)} className="mx-auto text-pink-600 bg-white px-4 py-2 rounded-full shadow-sm mt-4 flex items-center font-bold border border-pink-200 hover:bg-pink-50"><span className="mr-2">🔊</span>おてほんをきく</button>
               </div>
-              
               <div className="mb-8">
-                {currentSpeakLine < 4 ? (
-                  <>
-                    <button onClick={() => startListening('MY_ANSWER')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'} text-white mx-auto text-4xl transition`}>🎤</button>
-                    <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
-                  </>
-                ) : (
-                   <p className="text-3xl font-extrabold text-pink-600 animate-bounce mt-4">ぜんぶ 言えたね！✨</p>
-                )}
+                <button onClick={() => startListening('MY_ANSWER')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'} text-white mx-auto text-4xl transition`}>🎤</button>
+                <p className="mt-4 text-gray-600 font-bold">{isListening ? "はなしてください..." : "マイクをおして はなす"}</p>
                 
                 {feedbackMsg && (
-                  <div className={`mt-6 text-lg md:text-xl font-black ${feedbackMsg.includes('Excellent') || feedbackMsg.includes('Perfect') || feedbackMsg.includes('Good') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-4 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
+                  <div className={`mt-6 text-lg md:text-xl font-black ${feedbackMsg.includes('Excellent') ? 'text-green-600 border-green-400 bg-green-50' : 'text-red-600 border-red-400 bg-red-50'} p-4 rounded-2xl border-4 text-left leading-relaxed shadow-lg whitespace-pre-line`}>
                     {feedbackMsg}
                   </div>
                 )}
               </div>
-              
-              {currentSpeakLine < 4 && failCount >= 2 && (
-                 <button onClick={() => {
-                   setFailCount(0);
-                   setFeedbackMsg("");
-                   setLineSuccessCount(0);
-                   if (currentSpeakLine < 3) setCurrentSpeakLine(c => c+1);
-                   else proceedToNext('MY_ANSWER');
-                 }} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto text-gray-700 shadow">
-                   ⏭️ スキップ
-                 </button>
-              )}
-
-              {currentSpeakLine >= 4 && (
-                 <button onClick={() => proceedToNext('MY_ANSWER')} className="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold py-4 rounded-xl shadow-md mt-4 transition transform hover:scale-105">
-                   つぎへ！
-                 </button>
-              )}
+              {failCount >= 2 && <button onClick={() => proceedToNext('MY_ANSWER')} className="bg-gray-300 hover:bg-gray-400 py-3 px-6 rounded-xl font-bold mx-auto text-gray-700">⏭️ むずかしいので スキップ</button>}
             </div>
           </div>
         );
-      } else if (step === 'WORKSHEET_ANSWER') {
+      } 
+      
+      else if (step === 'WORKSHEET_ANSWER') {
+        const { text: qText } = getComAskTexts();
+
         content = (
           <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
             <BackButton />
-            <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 border-4 border-yellow-200 text-center mt-12">
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12 max-h-[90vh] overflow-y-auto">
               <h2 className="text-3xl font-bold text-yellow-700 mb-6 flex items-center justify-center"><span className="mr-2 text-4xl">📝</span>ワークシートに かこう！</h2>
               
-              <div className="bg-white border-2 border-gray-300 p-6 md:p-8 rounded-lg shadow-inner mb-8 bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')]">
-                <p className="text-base font-bold text-gray-600 mb-6 text-left bg-gray-100 inline-block px-3 py-2 rounded shadow-sm">
-                  Q: {COM_ASK_TEXT.text}
+              <div className="bg-white border-2 border-gray-300 p-8 rounded-lg shadow-inner mb-8 bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')]">
+                <p className="text-base font-bold text-gray-600 mb-2 text-left bg-gray-100 inline-block px-2 py-1 rounded shadow-sm">
+                  Q: {qText}
                 </p>
-                <div className="mt-4">
-                  <WorksheetLines data={{answers}} />
+                
+                <div className="text-xl md:text-2xl font-worksheet text-gray-800 leading-loose text-left mt-4 space-y-6">
+                  {myAnswers.map((ans, idx) => (
+                    <div key={idx} className="border-b-2 border-dashed border-gray-400 pb-4">
+                      <AnswerTextWithHighlight isEn={true} data={ans} />
+                    </div>
+                  ))}
                 </div>
               </div>
               
@@ -1026,6 +987,9 @@
           </div>
         );
       } else if (step === 'COM_ANSWER') {
+        const comAnsSentence = COM_ANSWERS.default.en;
+        const jpTranslation = COM_ANSWERS.default.ja;
+
         content = (
           <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
             <BackButton />
@@ -1033,12 +997,11 @@
               {renderHeader("クッマーニからの へんじ")}
               
               <CharacterMessage 
-                text={COM_ANS_TEXT.text}
-                jpText={COM_ANS_TEXT.jpText}
+                text={comAnsSentence}
+                jpText={jpTranslation}
                 isCom={true}
-                emoji={currentStage.emoji}
-                name={currentStage.name}
-                onSpeak={speak}
+                emoji="🐻"
+                name="クッマーニ"
               />
               
               <button onClick={() => { 
@@ -1054,7 +1017,7 @@
             <BackButton />
             <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border-4 border-yellow-200 text-center mt-12">
               <div className="text-6xl mb-6">📑</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-8 leading-relaxed">もう ワークシートは<br/>書いたかな？</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-8 leading-relaxed">もう ワークシートは<br/>ぜんぶ 書いたかな？</h2>
               
               <div className="flex flex-col gap-4">
                 <button 
@@ -1074,23 +1037,32 @@
           </div>
         );
       } else if (step === 'WORKSHEET_STAMP') {
-        const displayData = worksheetData || { answers };
+        const displayData = worksheetData || myAnswers;
+        const { text: qText } = getComAskTexts();
 
         content = (
-          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative py-12">
+          <div className="min-h-screen bg-yellow-50 p-4 flex items-center justify-center relative">
             <BackButton />
-            <div className="max-w-3xl w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 border-4 border-yellow-200 mt-12">
+            <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-6 md:p-8 border-4 border-yellow-200 mt-12 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-center text-yellow-600 mb-6 border-b-4 border-yellow-100 pb-4">
                 <span className="mr-4 text-4xl">💮</span><h2 className="text-3xl font-bold">ワークシート かんせい！</h2>
               </div>
               
-              <div className="bg-white border-2 border-gray-300 p-6 md:p-8 rounded-lg shadow-inner bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')] mb-8">
-                <h3 className="font-bold text-xl text-blue-600 mb-4 bg-blue-100 inline-block px-3 py-1 rounded">【わたしの こたえ】</h3>
-                <span className="text-gray-500 text-xs font-bold block mb-6 bg-gray-100 p-2 rounded inline-block font-sans">
-                  Q: {COM_ASK_TEXT.text}
-                </span>
-                
-                <WorksheetLines data={displayData} />
+              <div className="bg-white border-2 border-gray-300 p-6 rounded-lg shadow-inner bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')] mb-8">
+                <h3 className="font-bold text-xl text-blue-600 mb-4 bg-blue-100 inline-block px-3 py-1 rounded shadow-sm">【わたしの こたえ】</h3>
+                <div className="text-xl md:text-2xl font-worksheet text-gray-800 leading-loose mb-4 pb-4 text-left space-y-6">
+                  <span className="text-gray-500 text-xs font-bold block mb-2 bg-gray-100 p-1 rounded inline-block font-sans shadow-sm">
+                    Q: {qText}
+                  </span>
+                  {displayData.map((ans, idx) => (
+                    <div key={idx} className="border-b-2 border-dashed border-gray-400 pb-4">
+                      <div className="my-2"><AnswerTextWithHighlight isEn={true} data={ans} /></div>
+                      <span className="text-sm text-gray-500 font-bold block mt-3 bg-white/50 p-2 rounded border border-gray-200">
+                        <AnswerTextWithHighlight isEn={false} data={ans} />
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
               
               <div className="bg-red-50 p-6 rounded-xl border border-red-200 text-center mb-8 shadow-md">
@@ -1107,24 +1079,24 @@
             <BackButton />
             <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 text-center border-4 border-indigo-200 mt-12">
               <h2 className="text-3xl font-bold text-indigo-600 mb-6">えいかいわ おつかれさま！</h2>
-              <div className="text-6xl mb-6">💡🗣️</div>
-              <p className="text-lg font-bold text-gray-700 mb-8 leading-relaxed">ここからは 単語（たんご）を えいごで こたえる<br/>クイズだよ！<br/>ぜんぶで ４もん あるよ。</p>
+              <div className="text-6xl mb-6">🌟📝</div>
+              <p className="text-lg font-bold text-gray-700 mb-8 leading-relaxed">ここからは「感想」を えいごで こたえる<br/>クイズだよ！<br/>ぜんぶで ４もん あるよ。</p>
               <button onClick={() => setStep('QUIZ')} className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-md">スタート！</button>
             </div>
           </div>
         );
       } else if (step === 'QUIZ') {
         if (quizQuestions.length > 0 && currentQuizIndex < quizQuestions.length) {
-          const qWord = QUIZ_WORDS[quizQuestions[currentQuizIndex]];
+          const qAdj = ADJECTIVES[quizQuestions[currentQuizIndex]];
           content = (
             <div className="min-h-screen bg-indigo-50 p-4 flex items-center justify-center relative">
               <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 text-center border-4 border-indigo-200">
                 {renderHeader(`クイズ ${currentQuizIndex + 1} / 4`)}
                 <div className="bg-indigo-100 p-8 rounded-2xl mb-8 shadow-inner">
-                  <div className="text-6xl mb-4">{qWord.emoji}</div>
-                  <p className="text-4xl font-extrabold text-indigo-700 mb-4">{qWord.ja}</p>
+                  <div className="text-6xl mb-4">{qAdj.emoji}</div>
+                  <p className="text-4xl font-extrabold text-indigo-700 mb-4">{qAdj.ja}</p>
                   <p className="text-gray-600 font-bold text-xl">えいごで なにかな？</p>
-                  <button onClick={() => speak(qWord.en)} className="mt-6 bg-white px-4 py-2 rounded-full shadow-sm text-indigo-600 font-bold flex mx-auto items-center hover:bg-indigo-50 border border-indigo-200"><span className="mr-2">🔊</span>こたえをきく (ヒント)</button>
+                  <button onClick={() => speak(qAdj.name)} className="mt-6 bg-white px-4 py-2 rounded-full shadow-sm text-indigo-600 font-bold flex mx-auto items-center hover:bg-indigo-50 border border-indigo-200"><span className="mr-2">🔊</span>こたえをきく (ヒント)</button>
                 </div>
                 <div className="mb-8">
                   <button onClick={() => startListening('QUIZ')} disabled={isListening} className={`p-6 rounded-full shadow-lg ${isListening ? 'bg-red-500 animate-pulse' : 'bg-blue-500 hover:bg-blue-600'} text-white mx-auto text-4xl transition`}>🎤</button>
@@ -1141,20 +1113,54 @@
             </div>
           );
         }
+      } else if (step === 'GACHA') {
+        content = (
+          <div className="min-h-screen bg-indigo-900 p-4 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-700 via-indigo-900 to-black"></div>
+            <div className="max-w-lg w-full bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 text-center relative z-10 border border-white/20">
+              <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 mb-8">おたのしみ ガチャ！</h2>
+              {!currentGachaMonster ? (
+                <div className="mb-12">
+                  {isRolling ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-yellow-300 font-bold text-2xl mb-8 animate-pulse">なにがでるかな...？</p>
+                      <div className="w-48 h-48 mx-auto bg-white rounded-full flex items-center justify-center mb-8 border-4 border-yellow-300 scale-110 shadow-[0_0_50px_rgba(253,224,71,0.6)]">
+                        <span className="text-8xl">{rollEmoji}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-48 h-48 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center animate-bounce mb-8 shadow-[0_0_30px_rgba(236,72,153,0.5)]">
+                        <span className="text-7xl">🎁</span>
+                      </div>
+                      <button onClick={rollGacha} className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-3xl font-black py-5 px-12 rounded-full border-4 border-yellow-200 shadow-2xl hover:scale-105 transform transition">ガチャを まわす！</button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="mb-8 animate-fade-in-up">
+                  <p className="text-yellow-300 font-bold text-xl mb-4">ゲットした モンスターは…</p>
+                  <div className={`${currentGachaMonster.color} w-64 h-64 mx-auto rounded-full flex items-center justify-center mb-6 border-8 border-white shadow-[0_0_40px_rgba(255,255,255,0.3)]`}>
+                    <span className="text-8xl mb-2">{currentGachaMonster.emoji}</span>
+                  </div>
+                  <h3 className="text-4xl font-extrabold text-white mb-8 drop-shadow">{currentGachaMonster.name}</h3>
+                  <button onClick={() => setStep('MINIGAME_INTRO')} className="bg-yellow-500 hover:bg-yellow-600 text-white text-2xl font-bold py-4 px-8 rounded-full shadow-lg w-full transform transition hover:scale-105">つぎへ！</button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
       } else if (step === 'MINIGAME_INTRO') {
         content = (
           <div className="min-h-screen bg-green-50 p-4 flex items-center justify-center relative">
             <div className="max-w-lg w-full bg-white rounded-3xl shadow-xl p-8 text-center border-4 border-green-200">
               <h2 className="text-3xl font-bold text-green-600 mb-6">コインあつめ ゲーム！</h2>
               <div className="bg-green-100 p-6 rounded-2xl mb-8">
-                <div className="text-6xl mb-4 flex justify-center items-center gap-2">
-                  <span>🪙</span>
-                  <span className="animate-bounce">{currentStage.emoji}</span>
-                </div>
-                <p className="text-lg font-bold text-gray-700 leading-relaxed text-left bg-white p-4 rounded-xl shadow-sm">
-                  キーボードの十字キー や、<br/>
+                <div className="text-6xl mb-4">🪙🏃‍♂️</div>
+                <p className="text-lg font-bold text-gray-700 leading-relaxed text-left">
+                  キーボードの <span className="bg-white px-2 py-1 rounded shadow-sm border">↑</span> <span className="bg-white px-2 py-1 rounded shadow-sm border">↓</span> <span className="bg-white px-2 py-1 rounded shadow-sm border">←</span> <span className="bg-white px-2 py-1 rounded shadow-sm border">→</span> や、<br/>
                   がめんの ボタンを おして<br/>
-                  <span className="text-blue-600">{currentStage.name}</span> を うごかそう！<br/>
+                  モンスターを うごかそう！<br/>
                   <br/>
                   せいげんじかん 内に、<br/>
                   コイン（🪙）を たくさん あつめてね！
@@ -1165,11 +1171,12 @@
           </div>
         );
       } else if (step === 'MINIGAME') {
+        const gameMonsters = collections.length > 0 ? collections : (currentGachaMonster ? [currentGachaMonster] : []);
         content = (
-          <MiniGame playerStage={currentStage} onFinish={(coins) => {
+          <MiniGame monsters={gameMonsters} onFinish={(coins) => {
             setLastEarnedCoins(coins);
             const newTotal = totalCoins + coins;
-            saveData(playCount + 1, newTotal, items, kummaniLevel, kummaniExp, cookedDishes);
+            saveData(playCount, collections, newTotal, items, cookedDishes);
             setStep('RESULT');
           }} />
         );
@@ -1183,10 +1190,10 @@
               <p className="text-lg font-bold text-gray-500 mb-4">ぜんぶで {totalCoins} コインになったよ！</p>
               
               <div className="bg-orange-100 p-4 rounded-xl border-2 border-orange-200 mb-8">
-                <p className="text-orange-700 font-bold text-lg">ホームがめんで コインをつかって<br/>シャケを 買ってあげてね！</p>
+                <p className="text-orange-700 font-bold text-lg">ホームがめんで コインをつかって<br/>タケノコや さつまいもを かってみよう！</p>
               </div>
               
-              <button onClick={() => setStep('HOME')} className="bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-4 px-8 rounded-full flex items-center justify-center mx-auto shadow-md transform transition hover:scale-105 w-full">
+              <button onClick={() => { setCurrentGachaMonster(null); setStep('HOME'); }} className="bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-4 px-8 rounded-full flex items-center justify-center mx-auto shadow-md transform transition hover:scale-105 w-full">
                 <span className="mr-2">🏠</span> ホームにもどる
               </button>
             </div>
@@ -1198,7 +1205,7 @@
         <div className="min-h-screen relative font-sans touch-manipulation">
           {content}
 
-          {worksheetData && worksheetData.answers && !['WORKSHEET_ANSWER', 'WORKSHEET_STAMP', 'WORKSHEET_CHECK', 'HOME', 'MINIGAME', 'MINIGAME_INTRO', 'RESULT', 'QUIZ_INTRO', 'QUIZ'].includes(step) && (
+          {worksheetData && !['WORKSHEET_ANSWER', 'WORKSHEET_STAMP', 'WORKSHEET_CHECK', 'HOME', 'MINIGAME', 'MINIGAME_INTRO', 'RESULT', 'GACHA'].includes(step) && (
             <button 
               onClick={() => setShowWorksheet(true)} 
               className="fixed bottom-6 right-6 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 p-4 rounded-full shadow-2xl z-40 text-3xl border-4 border-white transition transform hover:scale-110"
@@ -1209,7 +1216,7 @@
 
           {showWorksheet && worksheetData && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 md:p-4 backdrop-blur-sm animate-fade-in-up">
-              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-3xl w-full relative border-4 border-yellow-300 shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')] max-h-[95vh] overflow-y-auto">
+              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full relative border-4 border-yellow-300 shadow-2xl bg-[url('https://www.transparenttextures.com/patterns/lined-paper-2.png')] max-h-[95vh] overflow-y-auto">
                 <button 
                   onClick={() => setShowWorksheet(false)} 
                   className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl font-bold bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center shadow z-10 border-2 border-gray-300"
@@ -1218,9 +1225,23 @@
                 </button>
                 <h3 className="text-2xl font-bold text-yellow-700 mb-6 flex items-center border-b-2 border-yellow-200 pb-2"><span className="mr-2 text-3xl">📑</span> ワークシート</h3>
                 
-                <div className="bg-white/90 p-6 md:p-8 rounded-2xl border-4 border-blue-200 shadow-md">
-                  <h4 className="font-bold text-blue-700 text-xl mb-4 bg-blue-100 px-4 py-2 rounded-lg inline-block shadow-sm">【わたしの こたえ】</h4>
-                  <WorksheetLines data={worksheetData} />
+                <div className="grid grid-cols-1 gap-8">
+                  <div className="bg-white/90 p-6 rounded-2xl border-4 border-blue-200 shadow-md">
+                    <h4 className="font-bold text-blue-700 text-xl mb-4 bg-blue-100 px-4 py-2 rounded-lg inline-block shadow-sm">【わたしの こたえ】</h4>
+                    
+                    <div className="space-y-6 mb-2">
+                      {worksheetData.map((ans, idx) => (
+                        <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+                          <div className="text-xl md:text-2xl font-worksheet font-bold text-blue-800 border-b-2 border-dashed border-blue-200 pb-4 mb-2 leading-loose text-left">
+                            <AnswerTextWithHighlight isEn={true} data={ans} />
+                          </div>
+                          <p className="text-base text-gray-600 mt-4 font-bold bg-gray-50 inline-block px-3 py-2 rounded-xl border border-gray-200 leading-relaxed font-worksheet text-left">
+                            <AnswerTextWithHighlight isEn={false} data={ans} />
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
